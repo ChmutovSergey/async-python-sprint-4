@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from src.core.config import settings
 
 # Создаём базовый класс для будущих моделей
-Base = declarative_base()
 # Создаём движок
 # Настройки подключения к БД передаём из переменных окружения, которые заранее загружены в файл настроек
 engine = create_async_engine(settings.DB_URL, echo=True, future=True)
@@ -14,5 +13,5 @@ async_session = sessionmaker(
 )
 
 async def get_session() -> AsyncSession:
-    async with async_session() as session, session.begin():
+    async with async_session() as session:
         yield session
