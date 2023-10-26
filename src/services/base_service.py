@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Base
+from src.models.models import Base
 
 
 class BaseService:
@@ -48,7 +48,7 @@ class ReadServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def check_and_remove_is_delete(self, statement):
         if hasattr(self._model, 'is_delete'):  # type: ignore
-            statement = statement.filter(self._model.is_delete == False)  # type: ignore
+            statement = statement.filter(self._model.is_delete == False)  # type: ignore # noqa
         return statement
 
     async def get_multi(

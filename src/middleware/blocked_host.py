@@ -12,8 +12,12 @@ class BlockedHostMiddleware:
     Middleware блокирует запросы из запрещенных подсетей (black list).
 
     app.add_middleware(
-        BlockedHostMiddleware, blocked_hosts=['*', "example.com", "*.example.com"]
+        BlockedHostMiddleware, blocked_hosts=['*', 'example.com', '*.example.com']
     )
+
+    '*' Блокирует все хосты
+    'example.com' Блокирует конкретный домен
+    '*.example.com' Блокирует все адресы относяшиеся к домену
     """
 
     def __init__(
@@ -43,19 +47,18 @@ class BlockedHostMiddleware:
         is_valid_host = False
         found_www_redirect = False
         for pattern in self.blocked_hosts:
-            if not (host == pattern or (pattern.startswith("*") and host.endswith(pattern[1:]))):
+            if host == pattern or (pattern.startswith("*") and host.endswith(pattern[1:])):
                 is_valid_host = True
                 break
             elif "www." + host == pattern:
                 found_www_redirect = True
 
         if is_valid_host:
-            await self.app(scope, receive, send)
-        else:
             await self.invalid_host(found_www_redirect, receive, scope, send)
+        else:
+            await self.app(scope, receive, send)
 
     async def invalid_host(self, found_www_redirect, receive, scope, send):
-        response: Response
         if found_www_redirect and self.www_redirect:
             url = URL(scope=scope)
             redirect_url = url.replace(netloc="www." + url.netloc)
