@@ -3,11 +3,10 @@ from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Base
-
 
 
 class BaseService:
@@ -49,7 +48,7 @@ class ReadServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def check_and_remove_is_delete(self, statement):
         if hasattr(self._model, 'is_delete'):  # type: ignore
-            statement = statement.filter(self._model.is_delete is False)  # type: ignore
+            statement = statement.filter(self._model.is_delete == False)  # type: ignore
         return statement
 
     async def get_multi(
@@ -70,6 +69,15 @@ class CreateServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType])
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
+
+    async def create_multi(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> List[ModelType]:
+        objs_in_data = jsonable_encoder(obj_in)
+        db_objs = [self._model(**obj_in_data) for obj_in_data in objs_in_data]  # type: ignore
+        db.add_all(db_objs)
+        await db.commit()
+        for db_obj in db_objs:
+            await db.refresh(db_obj)
+        return db_objs
 
 
 class UpdateServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
