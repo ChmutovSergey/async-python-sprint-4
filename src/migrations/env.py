@@ -12,8 +12,6 @@ from src.config.config import settings
 # access to the values within the .ini file in use.
 config = context.config
 
-# section = config.config_ini_section
-
 DB_URL = settings.DB_URL
 
 config.set_main_option('sqlalchemy.url', DB_URL)
@@ -30,7 +28,6 @@ if config.config_file_name is not None:
 from src.models.models import Base
 
 target_metadata = Base.metadata
-# target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

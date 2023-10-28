@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
@@ -53,7 +53,7 @@ class ReadServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get_multi(
             self, db: AsyncSession, *, skip=0, limit=100
-    ) -> List[ModelType]:
+    ) -> list[ModelType]:
         statement = select(
             self._model  # type: ignore
         ).where(
@@ -75,7 +75,7 @@ class CreateServiceMixin(Generic[ModelType, CreateSchemaType, UpdateSchemaType])
         await db.refresh(db_obj)
         return db_obj
 
-    async def create_multi(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> List[ModelType]:
+    async def create_multi(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> list[ModelType]:
         objs_in_data = jsonable_encoder(obj_in)
         db_objs = [self._model(**obj_in_data) for obj_in_data in objs_in_data]  # type: ignore
         db.add_all(db_objs)

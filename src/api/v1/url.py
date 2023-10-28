@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get(
     '/',
-    response_model=List[urls_scheme.UrlReadSchema],
+    response_model=list[urls_scheme.UrlReadSchema],
     status_code=status.HTTP_200_OK
 )
 async def read_urls(
@@ -57,12 +57,12 @@ async def create_url(
 
 @router.post(
     '/multi',
-    response_model=List[urls_scheme.UrlReadSchema],
+    response_model=list[urls_scheme.UrlReadSchema],
     status_code=status.HTTP_201_CREATED
 )
 async def create_urls(
         *,
-        urls_in: List[urls_scheme.UrlCreateSchema],
+        urls_in: list[urls_scheme.UrlCreateSchema],
         db: AsyncSession = Depends(get_session),
 ) -> Any:
     """

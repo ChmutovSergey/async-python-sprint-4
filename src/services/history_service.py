@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from sqlalchemy import select
@@ -19,7 +18,7 @@ class HistoryServiceDB:
             *,
             skip=0,
             limit=100
-    ) -> List[HistoryModel]:
+    ) -> list[HistoryModel]:
         statement = select(HistoryModel).offset(skip).limit(limit)
         if url_id:
             statement = statement.filter(HistoryModel.url_id == url_id)  # type: ignore

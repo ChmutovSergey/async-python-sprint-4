@@ -1,4 +1,4 @@
-import typing
+from typing import Optional, Sequence
 
 from starlette.datastructures import URL, Headers
 from starlette.responses import PlainTextResponse, RedirectResponse
@@ -23,7 +23,7 @@ class BlockedHostMiddleware:
     def __init__(
             self,
             app: ASGIApp,
-            blocked_hosts: typing.Optional[typing.Sequence[str]] = None,
+            blocked_hosts: Optional[Sequence[str]] = None,
             www_redirect: bool = True,
     ) -> None:
         if blocked_hosts is None:
