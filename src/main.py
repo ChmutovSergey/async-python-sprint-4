@@ -3,9 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
 from api.v1 import base
-from core.config import settings
-from core.logger import logger
-
+from config.config import settings
+from config.logger import logger
 from middleware.blocked_host import BlockedHostMiddleware
 
 app = FastAPI(
@@ -16,7 +15,7 @@ app = FastAPI(
 app.include_router(base.api_router, prefix='/api/v1')
 
 app.add_middleware(
-    BlockedHostMiddleware, blocked_hosts=['example.com', '*.example.com']
+    BlockedHostMiddleware, blocked_hosts=settings.blocked_hosts
 )
 
 if __name__ == '__main__':

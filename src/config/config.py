@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from pydantic import BaseSettings, PostgresDsn, validator
 
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, value: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(value, str) and value != '':
             return value
-        return PostgresDsn.build(  # type: ignore
+        return PostgresDsn.build(
             scheme='postgresql+asyncpg',
             user=values.get('DB_USER'),
             password=values.get('DB_PASSWORD'),
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     def assemble_test_db_connection(cls, value: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(value, str) and value != '':
             return value
-        return PostgresDsn.build(  # type: ignore
+        return PostgresDsn.build(
             scheme='postgresql+asyncpg',
             user=values.get('TEST_DB_USER'),
             password=values.get('TEST_DB_PASSWORD'),
@@ -50,6 +50,8 @@ class Settings(BaseSettings):
             port=str(values.get('TEST_DB_PORT')),
             path=f'/{values.get("TEST_DB_NAME") or ""}',
         )
+
+    blocked_hosts: Tuple[str, ...] = ('example.com', '*.example.com')
 
 
 settings = Settings()

@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from asyncio import AbstractEventLoop
 from dataclasses import dataclass
 from functools import cached_property
@@ -6,34 +7,17 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
+from _pytest.monkeypatch import MonkeyPatch
 from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
-from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncEngine, AsyncTransaction,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import (AsyncConnection, AsyncEngine, AsyncSession,
+                                    AsyncTransaction, create_async_engine)
 from sqlalchemy.orm import DeclarativeMeta
 
-from src.core.config import settings
+from src.config.config import settings
 from src.db.db import create_sessionmaker
 from src.models.models import Base, HistoryModel, UrlModel
-
-
-def create_engine_test() -> AsyncEngine:
-    return create_async_engine(
-        settings.TEST_DB_URL,
-        echo=True,
-    )
-
-
-engine_test = create_engine_test()
-async_session_test = create_sessionmaker(engine_test)
-
-
-async def override_get_db_session():
-    try:
-        db = async_session_test()
-        yield db
-    finally:
-        db.close()
+from src.schemes import urls_scheme
 
 
 @dataclass
@@ -49,7 +33,10 @@ class DBUtils:
 
     @cached_property
     def db_engine(self) -> AsyncEngine:
-        return create_async_engine(self.url, isolation_level='AUTOCOMMIT')
+        return create_async_engine(
+            self.url,
+            isolation_level='AUTOCOMMIT',
+        )
 
     async def create_database(self) -> None:
         query = text(f'CREATE DATABASE {self._parsed_url.database} ENCODING "utf8";')
@@ -66,7 +53,7 @@ class DBUtils:
             await conn.run_sync(base.metadata.create_all)
 
     async def drop_database(self) -> None:
-        query = text(f'DROP DATABASE {self._parsed_url.database}')
+        query = text(f'DROP DATABASE {self._parsed_url.database} WITH (FORCE);')
         async with self.postgres_engine.begin() as conn:
             await conn.execute(query)
 
@@ -80,6 +67,23 @@ class DBUtils:
     @cached_property
     def _parsed_url(self) -> URL:
         return make_url(self.url)
+
+
+def create_engine_test() -> AsyncEngine:
+    db_utils = DBUtils(url=settings.TEST_DB_URL)
+
+    return db_utils.db_engine
+
+
+async_session_test = create_sessionmaker(create_engine_test())
+
+
+async def override_get_db_session():
+    try:
+        db = async_session_test()
+        yield db
+    finally:
+        db.close()
 
 
 async def create_db(url: str, base: DeclarativeMeta) -> None:
@@ -97,6 +101,12 @@ async def create_db(url: str, base: DeclarativeMeta) -> None:
         await db_utils.db_engine.dispose()
 
 
+async def drop_db(url: str, base: DeclarativeMeta) -> None:
+    db_utils = DBUtils(url=url)
+
+    await db_utils.drop_database()
+
+
 @pytest.fixture(scope='session')
 def event_loop() -> Generator[AbstractEventLoop, None, None]:
     loop = asyncio.new_event_loop()
@@ -106,7 +116,8 @@ def event_loop() -> Generator[AbstractEventLoop, None, None]:
 
 @pytest_asyncio.fixture(scope='session', autouse=True)
 async def _create_db() -> None:
-    await create_db(url=settings.TEST_DB_URL, base=Base)
+    yield await create_db(url=settings.TEST_DB_URL, base=Base)
+    await drop_db(url=settings.TEST_DB_URL, base=Base)
 
 
 @pytest_asyncio.fixture()
@@ -137,7 +148,18 @@ async def db_transaction(
         await transaction.rollback()
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(autouse=True)
+async def session(
+        db_test_connection: AsyncConnection, monkeypatch: MonkeyPatch
+) -> AsyncGenerator[AsyncSession, None]:
+    session_maker = create_sessionmaker(db_test_connection)
+    monkeypatch.setattr('db.db.async_session', session_maker)
+
+    async with session_maker() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(scope='session')
 async def url_items() -> AsyncGenerator[UrlModel, None]:
     async with async_session_test() as session, session.begin():
         url1 = UrlModel(
@@ -152,7 +174,7 @@ async def url_items() -> AsyncGenerator[UrlModel, None]:
     yield [url1, url2]
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(scope='session')
 async def history_items(url_items) -> AsyncGenerator[HistoryModel, None]:
     url_obj, deleted_url_obj = url_items
     async with async_session_test() as session, session.begin():
@@ -163,3 +185,10 @@ async def history_items(url_items) -> AsyncGenerator[HistoryModel, None]:
         )
         session.add(history)
     yield history
+
+
+@pytest_asyncio.fixture()
+def new_test_url():
+    return urls_scheme.UrlEditSchema(
+        url=f'www.google.com/{str(uuid.uuid4())}'
+    )
