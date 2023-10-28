@@ -1,7 +1,10 @@
 from pydantic import BaseModel
 
-from src.schemes.base_scheme import (BaseCreateSchema, BaseEditSchema,
-                                 BaseReadSchema)
+from src.schemes.base_scheme import (
+    BaseCreateSchema,
+    BaseEditSchema,
+    BaseReadSchema,
+)
 
 
 class UrlBaseSchema(BaseModel):

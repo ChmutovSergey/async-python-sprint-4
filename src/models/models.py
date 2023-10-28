@@ -1,7 +1,16 @@
 import uuid
 
-from sqlalchemy import (TIMESTAMP, VARCHAR, Boolean, Column, Enum, ForeignKey,
-                        String, func, sql, text)
+from sqlalchemy import (
+    TIMESTAMP,
+    VARCHAR,
+    Boolean,
+    Column,
+    Enum,
+    ForeignKey,
+    String,
+    func,
+    sql,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base  # type: ignore
 
