@@ -9,10 +9,12 @@ from src.models.models import HistoryModel, UrlModel
 
 class RequestService:
 
-    async def check_and_remove_is_delete(self, statement):
+    @staticmethod
+    def check_and_remove_is_delete(statement):
         return statement.filter(UrlModel.is_delete == False)  # noqa
 
-    async def add_in_history(self, user_id, url_id, db, method, host):
+    @staticmethod
+    async def add_in_history(user_id, url_id, db, method, host):
         db_obj = HistoryModel(
             url_id=url_id,
             user_id=user_id,
@@ -24,7 +26,7 @@ class RequestService:
 
     async def get_url_from_db_by_id(self, db, url_id):
         statement = select(UrlModel).filter(UrlModel.id == url_id)
-        statement = await self.check_and_remove_is_delete(statement)
+        statement = self.check_and_remove_is_delete(statement)
         results = await db.execute(statement=statement)
         return results.scalar_one_or_none()
 
